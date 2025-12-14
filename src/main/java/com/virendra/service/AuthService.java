@@ -3,6 +3,7 @@ package com.virendra.service;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.virendra.dto.LoginRequest;
@@ -17,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 public class AuthService {
      @Autowired
      UserRepository userRepository;
+     
+     @Autowired
+     PasswordEncoder passwordEncoder; // 🔐 BCrypt
 
     // REGISTER
     public String register(RegisterRequest req) {
@@ -27,7 +31,10 @@ public class AuthService {
 
         User user = new User();
         user.setEmail(req.getEmail());
-        user.setPassword(req.getPassword()); // plain
+
+        // 🔐 BCrypt hashing
+        user.setPassword(passwordEncoder.encode(req.getPassword()));
+
         user.setUsername(req.getUsername());
 
         userRepository.save(user);
@@ -45,11 +52,13 @@ public class AuthService {
 
         User user = opt.get();
 
-        if (!user.getPassword().equals(req.getPassword())) {
+        // 🔓 BCrypt match (IMPORTANT)
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
             return "Invalid password";
         }
 
         return "Login successful";
     }
 }
+
 
