@@ -1,8 +1,5 @@
 package com.virendra.service;
 
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -10,19 +7,22 @@ import com.virendra.dto.LoginRequest;
 import com.virendra.dto.RegisterRequest;
 import com.virendra.model.User;
 import com.virendra.repository.UserRepository;
+import com.virendra.security.JwtUtil;
 
 import lombok.RequiredArgsConstructor;
+
+
+
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-     @Autowired
-     UserRepository userRepository;
-     
-     @Autowired
-     PasswordEncoder passwordEncoder; // 🔐 BCrypt
 
-    // REGISTER
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    
+    // 🔐 REGISTER
     public String register(RegisterRequest req) {
 
         if (userRepository.existsByEmail(req.getEmail())) {
@@ -31,34 +31,31 @@ public class AuthService {
 
         User user = new User();
         user.setEmail(req.getEmail());
-
-        // 🔐 BCrypt hashing
-        user.setPassword(passwordEncoder.encode(req.getPassword()));
-
         user.setUsername(req.getUsername());
 
+        // BCrypt password
+        user.setPassword(passwordEncoder.encode(req.getPassword()));
+
         userRepository.save(user);
+
         return "User registered successfully";
     }
 
-    // LOGIN
+    // 🔑 LOGIN
     public String login(LoginRequest req) {
 
-        Optional<User> opt = userRepository.findByEmail(req.getEmail());
+        User user = userRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new RuntimeException("Invalid email"));
 
-        if (opt.isEmpty()) {
-            return "Invalid email";
-        }
-
-        User user = opt.get();
-
-        // 🔓 BCrypt match (IMPORTANT)
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-            return "Invalid password";
+            throw new RuntimeException("Invalid password");
         }
 
-        return "Login successful";
+        // 🔥 JWT TOKEN
+        return jwtUtil.generateToken(user.getEmail());
     }
 }
+
+
 
 

@@ -1,6 +1,5 @@
 package com.virendra.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import com.virendra.dto.LoginRequest;
@@ -13,17 +12,20 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
-     @Autowired
-     AuthService authService;
 
+    private final AuthService authService;
+
+    // 📝 Register API
     @PostMapping("/register")
-    public String register(@RequestBody RegisterRequest req) {
-        return authService.register(req);
+    public String register(@RequestBody RegisterRequest request) {
+        return authService.register(request);
     }
 
+    // 🔐 Login API (returns JWT)
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequest req) {
-        return authService.login(req);
+    public String login(@RequestBody LoginRequest request) {
+        return authService.login(request);
     }
 }
+
 
